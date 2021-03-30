@@ -1,8 +1,3 @@
-/*
- * @Date: 2021-03-30 13:25:14
- * @LastEditors: GanYong
- * @LastEditTime: 2021-03-30 15:10:32
- */
 import Vue from 'vue'
 import App from './App.vue'
 import { Button, Input, Select, Table, Icon } from 'ant-design-vue';

@@ -1,8 +1,3 @@
-<!--
- * @Date: 2021-03-23 10:41:30
- * @LastEditors: GanYong
- * @LastEditTime: 2021-03-30 15:10:01
--->
 <template>
   <div class="table-from ant-table-bordered">
     <table width="100%" class="table">
@@ -203,8 +198,8 @@ export default {
         for (i = 0, len = parseInt(this.defaultRow); i < len; i++) {
           this.renderTable(true);
         }
-      }else {
-          return
+      } else {
+        return;
       }
     },
     // 提取key
