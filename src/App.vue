@@ -15,6 +15,7 @@
         :dataIndex="data2"
         defaultRow="1"
         :selectData="teamSelectData"
+        :defaultData="defaultdata2"
         isShowAdd="true"
         @getTableFormData="getdata2"
       ></table-form>
@@ -80,8 +81,8 @@ export default {
         {
           title: "Table-Title-1",
           dataIndex: "name",
-          type: "number",
-          formType: "input",
+          type: 'boolean',
+          formType: 'checkbox'
         },
         {
           title: "Table-Title-2",
@@ -110,8 +111,8 @@ export default {
         {
           title: "Table-Title-6",
           dataIndex: "memo",
-          type: "text",
-          formType: "textarea",
+          type: 'time',
+          formType: 'datepicker'
         },
       ],
       data3: [
@@ -154,6 +155,11 @@ export default {
         { name: "default-4" },
         { name: "default-5" },
         { name: "default-6" },
+      ],
+      defaultdata2: [
+        { name: ['香蕉', '芭蕉']},
+        { name: ['苹果', '贫果'] },
+        { name: ['西瓜', '麻瓜'] }
       ],
     };
   },

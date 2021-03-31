@@ -3,86 +3,54 @@
     <table width="100%" class="table">
       <caption>
         <span>{{ title }}</span>
-        <a-button
-          class="table-from-add"
-          v-if="isAdd"
-          icon="plus"
-          type="default"
-          @click="addTd"
-          >新增</a-button
-        >
+        <a-button class="table-from-add" v-if="isAdd" icon="plus" type="default" @click="addTd">新增行</a-button>
       </caption>
       <thead class="ant-table-thead">
         <tr>
-          <th
-            class="ant-table-align-center"
-            v-for="(item, index) in headList"
-            :key="index"
-            :style="{ width: item.width ? `${item.width}px` : '' }"
-          >
+          <th class="ant-table-align-center" v-for="(item, index) in headList" :key="index" :style="{ width: item.width ? `${item.width}px` : '' }">
             <span class="ant-table-header-column">{{ item.title }}</span>
           </th>
         </tr>
       </thead>
       <tbody ref="tbody" class="ant-table-tbody" v-if="isTable">
-        <tr
-          class="ant-table-row"
-          v-for="(item, index) in counmsList"
-          :key="index"
-        >
-          <td
-            v-for="(name, indexData) in Object.keys(item)"
-            :key="indexData"
-            :indexData="indexData"
-          >
-            <span
-              v-if="
-                headList[indexData].formType === 'textarea' &&
-                headList[indexData].type === 'text'
-              "
-            >
+        <tr class="ant-table-row" v-for="(item, index) in counmsList" :key="index">
+          <td v-for="(name, indexData) in Object.keys(item)" :key="indexData" :indexData="indexData">
+            <span v-if="headList[indexData].formType === 'textarea' && headList[indexData].type === 'text'">
               <a-textarea
                 class="form-text"
                 :style="{ resize: 'none' }"
                 placeholder=""
                 @change="inputOnChange"
-                v-model="item[name]"
-              />
+                v-model="item[name]"/>
             </span>
-            <span
-              v-else-if="
-                headList[indexData].formType === 'input' &&
-                headList[indexData].type === 'number'
-              "
-            >
+            <span v-else-if="headList[indexData].formType === 'input' && headList[indexData].type === 'number'">
               <a-input
                 class="form-text"
                 type="number"
                 :style="{ resize: 'none' }"
                 placeholder=""
                 @change="inputOnChange"
+                v-model="item[name]"/>
+            </span>
+            <span v-else-if="headList[indexData].formType === 'checkbox' && headList[indexData].type === 'boolean'">
+              <a-checkbox-group
                 v-model="item[name]"
+                name="checkboxgroup"
+                :options="checkboxOptions[index][name]"
+                @change="inputOnChange"
               />
             </span>
-            <span
-              v-else-if="
-                headList[indexData].formType === 'select' &&
-                headList[indexData].type === 'text' &&
-                selectData
-              "
-            >
+            <span v-else-if="headList[indexData].formType === 'datepicker' && headList[indexData].type === 'time'">
+              <a-date-picker v-model="item[name]" :format="dateFormat" />
+            </span>
+            <span v-else-if="headList[indexData].formType === 'select' && headList[indexData].type === 'text' && selectData">
               <a-select v-model="item[name]" class="form-text">
-                <a-select-option
-                  v-for="(option, optionIndex) in selectData[
-                    headList[indexData].dataIndex
-                  ]"
-                  :key="optionIndex"
-                  :value="option.value"
-                >
+                <a-select-option v-for="(option, optionIndex) in selectData[headList[indexData].dataIndex]" :key="optionIndex" :value="option.value">
                   {{ option.value }}
                 </a-select-option>
               </a-select>
             </span>
+            <!-- <span :style="{ width: trW + 'px' }" v-if="Object.keys(item).length - 1 === indexData" @mousedown="tableHeightChange" class="from-draggable"></span> -->
           </td>
         </tr>
       </tbody>
@@ -95,192 +63,220 @@
 </template>
 
 <script>
+import moment from 'moment'
+
 export default {
-  name: "TableForm",
+  name: 'TableForm',
   props: {
-    dataIndex: {
-      // 头部key索引
+    dataIndex: { // 头部key索引
       type: Array,
-      default: () => [],
+      default: () => []
     },
-    defaultRow: {
-      // 默认渲染0-n行
-      type: [String, Number],
-      default() {
-        return 0;
-      },
-    },
-    title: {
-      // table的标题
-      type: String,
-      default: "",
-    },
-    isShowAdd: {
-      // 是否显示增加按钮
-      type: [String, Boolean],
-      default: true,
-    },
-    defaultData: {
-      // 默认渲染的行数据
+		defaultRow: { // 默认渲染1-n行
+			type: [String, Number],
+			default () {
+				return 0
+			}
+		},
+		title: { // table的标题
+			type: String,
+			default: ''
+		},
+		isShowAdd: { // 是否显示增加按钮
+			type: [String, Boolean],
+			default: true
+		},
+    defaultData: { // 默认渲染的行数据
       type: Array,
-      default: () => [],
+      default: () => []
     },
-    selectData: {
-      // select的列表数据
+    selectData: { // select的列表数据
       type: Object,
-      default: () => {},
-    },
+      default: () => {}
+    }
   },
   computed: {
-    isAdd: function () {
-      // 类型转换
-      return JSON.parse(this.isShowAdd);
-    },
-    isTable: function () {
-      return this.defaultRow && this.counmsList.length;
-    },
-  },
+		isAdd: function () { // 类型转换
+			return JSON.parse(this.isShowAdd)
+		},
+		isTable: function () {
+			return this.counmsList.length
+		}
+	},
   watch: {
-    counmsList: {
-      // 监听数据输入
-      handler(val) {
-        this.$emit("getTableFormData", val);
+    counmsList: { // 监听数据输入
+      handler (val) {
+				this.$emit('getTableFormData', val)
       },
-      deep: true,
-    },
+      deep: true
+    }
   },
-  data() {
+  data () {
     return {
       headList: this.dataIndex,
       counmsList: [],
-    };
-  },
-  created() {
-    if (this.defaultData.length > 0) {
-      this.renderTable(false);
-    } else {
-      this.showDefaultRow();
+      checkboxOptions: [],
+      trH: 0,
+      trW: 0,
+      dateFormat: 'YYYY-MM-DD'
     }
   },
-  mounted() {},
+	created () {
+    if (this.defaultData.length > 0) {
+      this.renderTable(false)
+    } else {
+      this.showDefaultRow()
+    }
+	},
+  mounted () {},
   methods: {
+    moment,
     // 输入框的值改变时触发
-    inputOnChange(e) {
-      const heightArrs = [];
-      const trNode = e.currentTarget.parentElement.parentElement.parentElement;
-      const childrenNode = [...trNode.children];
-      childrenNode.forEach((item) => {
-        const textareaNode = item.firstElementChild.firstElementChild;
-        textareaNode.style.height = "auto";
-        heightArrs.push(textareaNode.scrollHeight);
-      });
-      childrenNode.forEach((item) => {
-        const textareaNode = item.firstElementChild.firstElementChild;
-        if (textareaNode.nodeName !== "DIV") {
-          const maxNum = Math.max.apply(null, heightArrs);
+    inputOnChange (e) {
+      const heightArrs = []
+      console.log(e)
+      const trNode = this.depNode(e.currentTarget || e?.nativeEvent?.target)
+      if (!trNode) return
+      const childrenNode = [...trNode.children]
+      childrenNode.forEach(item => {
+        const textareaNode = item.firstElementChild.firstElementChild
+        textareaNode.style.height = 'auto'
+        heightArrs.push(textareaNode.scrollHeight)
+      })
+      childrenNode.forEach(item => {
+        const textareaNode = item.firstElementChild.firstElementChild
+        const nodeName = textareaNode.nodeName
+        if (nodeName !== 'DIV' && nodeName !== 'LABEL') {
+          const maxNum = Math.max.apply(null, heightArrs)
           if (maxNum > 50) {
-            textareaNode.style.height = `${maxNum}px`;
+            textareaNode.style.height = `${maxNum}px`
           } else {
-            textareaNode.style.height = `${34}px`;
+            textareaNode.style.height = `${34}px`
           }
         }
-      });
+      })
+    },
+    // 查找tr
+    depNode (target) {
+      if (!target) return
+      let node = target
+      while (node.nodeName !== 'TR') {
+        node = node.parentElement
+      }
+      return node
     },
     // 增加一行
-    addTd() {
-      this.renderTable(true);
+    addTd () {
+      this.renderTable(true)
     },
-    // 默认显示的table行
-    showDefaultRow() {
-      let i, len;
-      if (this.defaultData.length > 0) return;
+		// 默认显示的table行
+		showDefaultRow () {
+			let i, len
+      if (this.defaultData.length > 0) return
       if (parseInt(this.defaultRow) > 0) {
         for (i = 0, len = parseInt(this.defaultRow); i < len; i++) {
-          this.renderTable(true);
+          this.renderTable(true)
         }
-      } else {
-        return;
       }
-    },
+		},
     // 提取key
-    filterKey() {
-      const res = {};
-      this.dataIndex.forEach((item) => {
-        res[item.dataIndex] = "";
-      });
-      return res;
+    filterKey () {
+      const res = {}
+      this.dataIndex.forEach(item => {
+        if (item.formType !== 'checkbox') {
+          res[item.dataIndex] = ''
+        } else {
+          res[item.dataIndex] = []
+        }
+      })
+      return res
     },
     // table行渲染方式
-    renderTable(frequency) {
-      const key = this.filterKey();
+    renderTable (frequency) {
+      const key = this.filterKey()
+      // 如果不需要默认数据展示 只渲染空对象
       if (frequency) {
-        this.counmsList.push(key);
+        this.counmsList.push(key)
       } else {
+        // 需要渲染默认的情况 合并有值的key
         if (Array.isArray(this.defaultData)) {
           this.defaultData.forEach((item) => {
-            const objs = { ...key, ...item };
-            this.counmsList.push(objs);
-          });
+            const objs = { ...key, ...item }
+            this.counmsList.push(objs)
+          })
         }
+        // 渲染组件是checkbox时复制一份数据作为选项列表
+        this.checkboxOptions = JSON.parse(JSON.stringify(this.counmsList))
+        // 对checkbox数据双向绑定的对象做处理
+        this.counmsList.forEach((item) => {
+          Object.keys(item).forEach(key => {
+            if (Array.isArray(item[key]) && item[key].length > 0) {
+              // item[key] = []
+            }
+          })
+        })
       }
-    },
-  },
-};
+    }
+  }
+}
 </script>
 
 <style lang="less" scoped>
 .title {
   text-align: center;
 }
-/deep/ table tbody tr:hover > td {
-  background-color: #ffffff !important;
+/deep/ table tbody tr:hover>td {
+  background-color:#ffffff!important
 }
 table {
-  margin-top: 20px;
+	margin-top: 20px;
   border-collapse: collapse;
   text-align: center;
   table-layout: fixed;
-  caption {
+  caption{
     caption-side: top;
     text-align: center;
     font-size: 16px;
     font-weight: bold;
     padding: 20px 0 20px 0;
-    color: #17233d;
-    position: relative;
-    > spam {
-      display: inline-block;
-      height: 32px;
-    }
-    .table-from-add {
-      position: absolute;
-      right: 0;
-    }
+		color: #17233d;
+		position: relative;
+		> spam{
+			display: inline-block;
+			height: 32px;
+		}
+		.table-from-add{
+			position: absolute;
+			right: 0;
+		}
   }
-  thead {
-    th {
+  thead{
+    th{
       text-align: center;
       padding: 8px !important;
     }
   }
-  td {
+  td{
     color: #666;
     padding: 1px !important;
-    .form-text {
+    .form-text{
       text-align: center;
     }
   }
 }
-table tr {
+table tr{
   background: #fff;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
+  -moz-user-select:none;
+  -webkit-user-select:none;
+  user-select: none
 }
-tbody {
-  td {
+table tr:nth-child(even) {
+  // background: #f5fafa;
+}
+tbody{
+  td{
     position: relative;
-    .from-draggable {
+    .from-draggable{
       display: block;
       position: absolute;
       height: 4px;
@@ -292,44 +288,55 @@ tbody {
     /*添加css样式*/
     /deep/ input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
+        -webkit-appearance: none;
     }
     /deep/ input[type="number"] {
-      -moz-appearance: textfield;
+        -moz-appearance: textfield;
     }
   }
 }
-.table-from {
-  .no-data {
-    width: 100%;
-    padding: 8px;
-    text-align: center;
-    color: #c5c8ce;
-    background: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    > span {
-      display: inline-block;
-      padding-right: 8px;
-    }
-  }
+.table-from{
+	.no-data{
+		width: 100%;
+		padding: 8px;
+		text-align: center;
+		color: #c5c8ce;
+		background: #fff;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		> span{
+			display: inline-block;
+			padding-right: 8px;
+		}
+	}
 }
-.table-from /deep/ .ant-input {
+.table-from /deep/ .ant-input{
   border-radius: 0px;
   border: none;
 }
-.table-from /deep/ .ant-select {
+.table-from /deep/ .ant-select{
   width: 100%;
-  .ant-select-selection {
+  .ant-select-selection{
     border-radius: 0px;
     border: none;
   }
-  .ant-select-selection-selected-value {
+  .ant-select-selection-selected-value{
     width: 100%;
   }
 }
-.table-from /deep/ textarea.ant-input {
+.table-from /deep/ .ant-calendar-picker{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  & > div{
+    width: 100%;
+    .ant-input{
+      text-align: center;
+    }
+  }
+}
+.table-from /deep/ textarea.ant-input{
   min-height: 30px;
   height: 34px;
 }
